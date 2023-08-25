@@ -19,7 +19,6 @@ function initalize(fetchQueue: IFetchQueue, config: FetchQueueConfig) {
   }
 }
 
-
 export function FetchQueue(this: IFetchQueue, config: FetchQueueConfig) {
   initalize(this, config)
 
@@ -34,16 +33,18 @@ export function FetchQueue(this: IFetchQueue, config: FetchQueueConfig) {
   })()
 
   const execute = async () => {
-    if (this.eventStatus !== 'pending') return;
+    if (this.eventStatus !== 'pending') return
     this.eventStatus = 'executing'
-    for await (const _ of event) {}
+    for await (const _ of event) {} // eslint-disable-line no-empty
     this.eventStatus = 'pending'
   }
 
   return (input: RequestInfo | URL, init?: RequestInit | undefined) => {
     return new Promise<Response>((resolve, reject) => {
       queues.push(() => {
-        return fetch(input, init).then(resolve).catch(reject)
+        return fetch(input, init)
+          .then(resolve)
+          .catch(reject)
       })
       execute()
     })

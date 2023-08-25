@@ -1,15 +1,12 @@
 module.exports = {
   root: true,
-  env: { browser: true, es2020: true },
-  plugins: ['react-refresh'],
-  rules: {
-    'react-refresh/only-export-components': [
-      'warn',
-      { allowConstantExport: true },
-    ],
+  env: {
+    node: true,
+    es6: true,
   },
   parserOptions: { ecmaVersion: 8, sourceType: 'module' },
-  ignorePatterns: ['node_modules/*', 'dist', '.eslintrc.cjs'],
+  ignorePatterns: ['node_modules/*'],
+  extends: ['eslint:recommended'],
   overrides: [
     {
       files: ['**/*.ts', '**/*.tsx'],
@@ -27,15 +24,13 @@ module.exports = {
       },
       extends: [
         'eslint:recommended',
-        'plugin:react/recommended',
-        'plugin:react-hooks/recommended',
         'plugin:import/recommended',
-        // 'plugin:import/errors',
-        // 'plugin:import/warnings',
+        'plugin:import/errors',
+        'plugin:import/warnings',
         'plugin:import/typescript',
-        'plugin:@typescript-eslint/recommended',
+        'plugin:@typescript-eslint/recommended'
       ],
-      plugins: [],
+      plugins: ['import-newlines'],
       rules: {
         'newline-per-chained-call': ['error', { ignoreChainWithDepth: 1 }],
         indent: ['error', 2, {SwitchCase: 1}],
@@ -45,21 +40,27 @@ module.exports = {
             patterns: ['@/features/*/*'],
           },
         ],
-        semi: ['error', 'never', { beforeStatementContinuationChars: 'never' }],
-        "object-curly-spacing": ["error", "always"],
-        'linebreak-style': 0,
-        'no-multiple-empty-lines': ["error", { "max": 2, "maxEOF": 1 }],
-        'quotes': ["error", 'single', {allowTemplateLiterals: true}],
-        'eol-last': ["error", "always"],
-        'array-bracket-newline': ["error", { "multiline": true, "minItems": 3 }],
-        'max-len': ["error", {
-          "code": 120,
-          "ignoreComments": true,
-          "ignoreUrls": true,
-          "ignoreStrings": true,
-          "ignoreTemplateLiterals": true,
-          "ignoreRegExpLiterals": true
+        'max-len': ['error', 100, 2, {
+          ignoreUrls: true,
+          ignoreComments: false,
+          ignoreRegExpLiterals: true,
+          ignoreStrings: true,
+          ignoreTemplateLiterals: true,
         }],
+        semi: ['error', 'never', { beforeStatementContinuationChars: 'never' }],
+        'quotes': ["error", 'single', {allowTemplateLiterals: true}],
+        'linebreak-style': 0,
+        'eol-last': ["error", "always"],
+        "object-curly-spacing": ["error", "always"],
+        'no-multiple-empty-lines': ["error", { "max": 2, "maxEOF": 1 }],
+        'array-bracket-newline': ["error", { "multiline": true, "minItems": 3 }],
+        'object-curly-newline': ['error' , {
+          "ObjectExpression": {'minProperties': 3, 'multiline': true, 'consistent': true},
+          "ObjectPattern": { "multiline": true, 'minProperties': 2 },
+          "ImportDeclaration": { "multiline": true },
+          "ExportDeclaration": { "multiline": true, "minProperties": 3 }
+        }],
+        'no-duplicate-imports': 'off',
         'import/order': [
           'error',
           {
@@ -71,44 +72,41 @@ module.exports = {
               'sibling',
               'index',
               'object',
+              'type',
             ],
             'newlines-between': 'never',
             alphabetize: { order: 'asc', caseInsensitive: true },
           },
         ],
-        'import/no-unresolved': [2, { ignore: ['\\.svg$'] }],
+        'import/newline-after-import': ['error', { 'count': 2 }],
+        'import/no-duplicates': ['error', {'prefer-inline': true}],
+        'import/consistent-type-specifier-style': ['error', 'prefer-top-level'],
         'import/default': 'off',
         'import/no-named-as-default-member': 'off',
         'import/no-named-as-default': 'off',
-        "import/no-duplicates": ["error", {"prefer-inline": false}],
         '@typescript-eslint/no-unused-vars': [
           'error',
-          { argsIgnorePattern: '^_' },
+          { 
+            argsIgnorePattern: '^_',
+            varsIgnorePattern: "^_",
+            caughtErrorsIgnorePattern: "^_"
+          },
         ],
-        "react/react-in-jsx-scope": "off",
-        "react/jsx-newline": [2, { "prevent": true, "allowMultilines": false }],
-        "react/jsx-wrap-multilines": ["error", {
-          "declaration": "parens-new-line",
-           "assignment": "parens-new-line",
-           "return": "parens-new-line",
-           "arrow": "parens-new-line",
-           "condition": "parens-new-line",
-           "logical": "parens-new-line",
-           "prop": "parens-new-line"
-         }
-        ],
-        'react/jsx-no-comment-textnodes': 2,
-        'react/jsx-max-props-per-line': [2, { "maximum": 1 }],
-        "react/jsx-indent": [2, 2, {indentLogicalExpressions: true}],
-        "react/jsx-first-prop-new-line": [2, 'multiline'],
-        'react/jsx-indent-props': [2, { indentMode: 2, ignoreTernaryOperator: true} ],
-        "react/jsx-closing-bracket-location": [2, 'line-aligned'],
-        'react/jsx-one-expression-per-line': [2, {allow: "single-child"}],
+        "@typescript-eslint/consistent-type-imports": ["error", {prefer: 'type-imports', fixStyle: 'separate-type-imports'}],
+        '@typescript-eslint/no-import-type-side-effects': 'error',
         '@typescript-eslint/explicit-function-return-type': ['off'],
         '@typescript-eslint/explicit-module-boundary-types': ['off'],
         '@typescript-eslint/no-empty-function': ['off'],
         '@typescript-eslint/no-explicit-any': ['off'],
         '@typescript-eslint/consistent-type-assertions': ['off'],
+        'import-newlines/enforce': [
+          'error',
+          {
+            'items': 1,
+            'max-len': 100,
+            'semi': false
+          }
+        ],
       },
     },
   ],
