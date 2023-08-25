@@ -1,1 +1,1 @@
-console.log('Hello World!')
+export { FetchQueue } from './queue'
