@@ -15,10 +15,8 @@ type CreateMethodsFn<
 > = (ctx: TContext) => TMethods
 
 type RequestBaseFn<
-  TConfig extends BaseConfig = BaseConfig,
-  TContext extends BaseContext = BaseContext<TConfig>,
   TMethods extends BaseMethods = BaseMethods
-> = (ctx: TContext, methods: TMethods)
+> = (methods: TMethods)
   => (input: RequestInfo | URL, init?: RequestInit | undefined)
   => Promise<Response>
 
@@ -28,15 +26,15 @@ type CreateFetchBaseFnParams<
 > = {
   initializer: InitializerFn<TConfig>,
   createMethods: CreateMethodsFn<TMethods, TConfig>
-  requestFn?: RequestBaseFn<TConfig>
+  requestFn?: RequestBaseFn<TMethods>
 }
 type CreateFetchBaseFn = <
   TConfig extends BaseConfig = BaseConfig,
 >(params: CreateFetchBaseFnParams<TConfig>)
   => (userConfig?: TConfig)
-  => ReturnType<RequestBaseFn<TConfig>>
+  => ReturnType<RequestBaseFn>
 
-const requestBese: RequestBaseFn = (_ctx, _methods) =>
+const requestBese: RequestBaseFn = (_methods) =>
   (input, init) => new Promise((resolve, reject) => {
     fetch(input, init)
       .then(resolve)
@@ -52,5 +50,5 @@ export const createFetchBase: CreateFetchBaseFn = ({
 }) => (userConfig) => {
   const ctx = initializer(userConfig)
   const methods = createMethods(ctx)
-  return requestFn(ctx, methods)
+  return requestFn(methods)
 }
