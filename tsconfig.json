@@ -30,9 +30,10 @@
     }
   },
   "include": [
-    "**/*.ts"
+    "src/**/*.ts"
   ],
   "exclude": [
+    "__test__",
     "node_modules",
     "lib",
     "esm",
