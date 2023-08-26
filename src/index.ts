@@ -1,1 +1,1 @@
-export { FetchQueue } from './queue'
+export { createFetchQueue } from './queue'

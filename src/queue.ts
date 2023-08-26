@@ -2,46 +2,51 @@ interface FetchQueueConfig {
   concurrency?: number
 }
 
-interface IFetchQueue {
+interface FetchQueueContext {
   config: FetchQueueConfig;
   eventStatus: EventStatus;
+  queues: Queue[];
 }
 
 type EventStatus = 'pending' | 'executing'
 type Queue = () => Promise<void>
 
 
-function initalize(fetchQueue: IFetchQueue, config: FetchQueueConfig) {
-  fetchQueue.eventStatus = 'pending'
-  fetchQueue.config = {
-    concurrency: Infinity,
-    ...config,
+function initalize(config: FetchQueueConfig): FetchQueueContext {
+  return {
+    eventStatus: 'pending',
+    queues: [],
+    config: {
+      concurrency: Infinity,
+      ...config, 
+    }
   }
 }
 
-export function FetchQueue(this: IFetchQueue, config: FetchQueueConfig) {
-  initalize(this, config)
+type CreateFetchQueueFn = (config?: FetchQueueConfig)
+  => (input: RequestInfo | URL, init?: RequestInit | undefined)
+  => Promise<Response>
 
-  const queues: Queue[] = []
+export const createFetchQueue: CreateFetchQueueFn = function (userConfig = {}) {
+  const ctx = initalize(userConfig)
 
   const event = (async function* () {
     let queue: Queue | undefined = undefined
-    while ((queue = queues.pop()) !== undefined) {
-      await queue()
-      yield
+    while ((queue = ctx.queues.pop()) !== undefined) {
+      yield await queue()
     }
-  })()
+  })
 
   const execute = async () => {
-    if (this.eventStatus !== 'pending') return
-    this.eventStatus = 'executing'
-    for await (const _ of event) {} // eslint-disable-line no-empty
-    this.eventStatus = 'pending'
+    if (ctx.eventStatus === 'executing') return
+    ctx.eventStatus = 'executing'
+    for await (const _ of event()) {} // eslint-disable-line no-empty
+    ctx.eventStatus = 'pending'
   }
 
   return (input: RequestInfo | URL, init?: RequestInit | undefined) => {
     return new Promise<Response>((resolve, reject) => {
-      queues.push(() => {
+      ctx.queues.push(() => {
         return fetch(input, init)
           .then(resolve)
           .catch(reject)
