@@ -1,59 +1,112 @@
-interface FetchQueueConfig {
-  concurrency?: number
-}
+import { createClient } from './base'
+import type { RequestFn } from './base'
 
-interface FetchQueueContext {
-  config: FetchQueueConfig;
-  eventStatus: EventStatus;
-  queues: Queue[];
-}
 
 type EventStatus = 'pending' | 'executing'
-type Queue = () => Promise<void>
+type Process = () => Promise<void>
+type Queue = [number, Process]
 
-
-function initializer
-(config: FetchQueueConfig): FetchQueueContext {
-  return {
-    eventStatus: 'pending',
-    queues: [],
-    config: {
-      concurrency: Infinity,
-      ...config, 
-    }
-  }
+type FetchFlowConfig = {
+  sizeLimit?: number;
 }
 
-type CreateFetchQueueFn = (config?: FetchQueueConfig)
-  => (input: RequestInfo | URL, init?: RequestInit | undefined)
-  => Promise<Response>
+type FetchFlowContext = {
+  eventStatus: EventStatus;
+  currentFetchSize: number;
+  currentProcesses: Map<number, Promise<void>>;
+  queues: Map<number, Queue>
+  config: Readonly<Required<FetchFlowConfig>>
+}
 
-export const createFetchQueue: CreateFetchQueueFn = function (userConfig = {}) {
-  const ctx = initializer(userConfig)
+type FetchActions = ReturnType<typeof createActions>
 
-  const event = (async function* () {
-    let queue: Queue | undefined = undefined
-    while ((queue = ctx.queues.pop()) !== undefined) {
-      yield await queue()
+const fetchSize = async (input: RequestInfo | URL, init: RequestInit | undefined = {}) => {
+  return await fetch(input, {
+    ...init,
+    method: 'HEAD',
+  })
+    .then(data => parseInt(data.headers.get('Content-Length') ?? '0'))
+}
+
+const initializer = (config: FetchFlowConfig = {}): FetchFlowContext => ({
+  eventStatus: 'pending',
+  currentFetchSize: 0,
+  currentProcesses: new Map(),
+  queues: new Map(),
+  config: {
+    sizeLimit: Infinity,
+    ...config
+  }
+})
+
+const createActions = (ctx: FetchFlowContext) => {
+  let queueId = 0
+  let processId = 0
+
+  const isExecutable = (size: number) => {
+    return (ctx.config.sizeLimit - ctx.currentFetchSize) >= size
+  }
+
+  const nextTask = () => {
+    for (const [id, queue] of ctx.queues) {
+      if (!isExecutable(queue[0])) continue
+      ctx.queues.delete(id)
+      return queue
     }
-    return
+    return undefined
+  }
+  const event = (async function* () {
+    let task: Queue | undefined = undefined
+    
+    while ((task = nextTask()) !== undefined) {
+      const [size, queue] = task
+      ctx.currentFetchSize -= size
+      const itemId = ++processId
+      ctx.currentProcesses.set(
+        itemId,
+        queue()
+          .finally(() => {
+            ctx.currentFetchSize += size
+            ctx.currentProcesses.delete(itemId)
+            ctx.eventStatus = ctx.currentProcesses.size > 0 ? 'executing': 'pending'
+          }))
+    }
+    
+    yield await Promise.any([...ctx.currentProcesses].map(([_, promise]) => promise))
   })
 
-  const execute = async () => {
-    if (ctx.eventStatus === 'executing') return
+  const execute = async (isLoop = false) => {
+    if (ctx.eventStatus === 'executing' && !isLoop) return
     ctx.eventStatus = 'executing'
-    for await (const _ of event()) {} // eslint-disable-line no-empty
-    ctx.eventStatus = 'pending'
+    for await(const _ of event()) {} // eslint-disable-line no-empty
+    execute(true)
   }
 
-  return (input: RequestInfo | URL, init?: RequestInit | undefined) => {
-    return new Promise<Response>((resolve, reject) => {
-      ctx.queues.push(() => {
-        return fetch(input, init)
-          .then(resolve)
-          .catch(reject)
-      })
-      execute()
-    })
-  }
+  return ({
+    addQueue: (task: Queue) => {
+      ctx.queues.set(++queueId, task)
+    },
+    execute
+  })
 }
+
+const requestFn: RequestFn<FetchActions> = (actions) => 
+  (input, init) => {
+    return new Promise((resolve, reject) => {
+      fetchSize(input, init)
+        .then(size => {
+          actions.addQueue([
+            size,
+            () => fetch(input, init)
+              .then(resolve)
+              .catch(reject)
+          ])
+          actions.execute()
+        })
+    })}
+  
+export const fetchFlowClient = createClient({
+  initializer,
+  createActions,
+  requestFn
+})

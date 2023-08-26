@@ -9,7 +9,7 @@ type FetchQueueConfig = {
 type FetchQueueContext = {
   eventStatus: EventStatus;
   queues: Queue[];
-  config: FetchQueueConfig;
+  config: Readonly<Required<FetchQueueConfig>>;
 }
 
 type FetchActions = ReturnType<typeof createActions>

@@ -2,7 +2,7 @@ type BaseConfig = Record<string, unknown>
 export type BaseContext<T extends BaseConfig = BaseConfig> = {
   [K in PropertyKey]: unknown;
 } & {
-  config: T
+  config: Readonly<Required<T>>
 }
 
 export type BaseActions = {
