@@ -5,7 +5,7 @@ export type BaseContext<T extends BaseConfig = BaseConfig> = {
   config: T
 }
 
-export type BaseMethods = {
+export type BaseActions = {
   [K in PropertyKey]: (...args: never[]) => void
 }
 
@@ -14,45 +14,45 @@ export type InitializerFn<
   TContext extends BaseContext<TConfig> = BaseContext<TConfig>
 > = (config: TConfig | undefined) => TContext
 
-export type CreateMethodsFn<
+export type CreateActionsFn<
   TContext extends BaseContext = BaseContext,
-  TMethods extends BaseMethods = BaseMethods,
-> = (ctx: TContext) => TMethods
+  TActions extends BaseActions = BaseActions,
+> = (ctx: TContext) => TActions
 
 export type RequestFn<
-  TMethods extends BaseMethods = BaseMethods
-> = (methods: TMethods)
+  TActions extends BaseActions = BaseActions
+> = (actions: TActions)
   => (input: RequestInfo | URL, init?: RequestInit | undefined)
   => Promise<Response>
 
 export type CreateFetchBaseFn = <
   TConfig extends BaseConfig = BaseConfig,
   TContext extends BaseContext<TConfig> = BaseContext<TConfig>,
-  TMethods extends BaseMethods = BaseMethods
+  TActions extends BaseActions = BaseActions
 >(params: {
   initializer: InitializerFn<TConfig, TContext>;
-  createMethods: CreateMethodsFn<TContext, TMethods>;
-  requestFn?: RequestFn<TMethods>;
+  createActions: CreateActionsFn<TContext, TActions>;
+  requestFn?: RequestFn<TActions>;
 })
   => (userConfig?: TConfig)
   => ReturnType<RequestFn>
 
-export const requestBese: RequestFn = (_methods) =>
+export const requestBese: RequestFn = (_actions) =>
   (input, init) => new Promise((resolve, reject) => {
     fetch(input, init)
       .then(resolve)
       .catch(reject)
   })
 
-export const createBaseMethods: CreateMethodsFn = (_ctx) => ({})
+export const createBaseActions: CreateActionsFn = (_ctx) => ({})
 
 
 export const createClient: CreateFetchBaseFn = ({
   initializer,
-  createMethods,
+  createActions,
   requestFn = requestBese
 }) => (userConfig) => {
   const ctx = initializer(userConfig)
-  const methods = createMethods(ctx)
-  return requestFn(methods)
+  const actions = createActions(ctx)
+  return requestFn(actions)
 }
