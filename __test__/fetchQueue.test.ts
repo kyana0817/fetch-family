@@ -5,7 +5,7 @@ import {
   it,
   expect
 } from 'vitest'
-import { createFetchQueue } from '../src/queue'
+import { fetchQueueClient } from '../src/queue'
 import type { Mock } from 'vitest'
 
 
@@ -17,8 +17,7 @@ global.fetch = vi.fn((input: RequestInfo | URL) => Promise.resolve({
   }),
 })) as Mock  
 
-const fetchQueue = createFetchQueue()
-
+const fetchQueue = fetchQueueClient()
 describe('fetchQueue test', () => {
   it('fetching', async () => {
     const res = await fetchQueue('100')
