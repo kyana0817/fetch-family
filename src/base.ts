@@ -1,4 +1,4 @@
-type BaseConfig = Record<string, never>
+type BaseConfig = Record<string, unknown>
 export type BaseContext<T extends BaseConfig = BaseConfig> = {
   [K in PropertyKey]: unknown;
 } & {
@@ -12,14 +12,14 @@ export type BaseMethods = {
 export type InitializerFn<
   TConfig extends BaseConfig = BaseConfig,
   TContext extends BaseContext<TConfig> = BaseContext<TConfig>
-> = (config?: TConfig) => TContext
+> = (config: TConfig | undefined) => TContext
 
 export type CreateMethodsFn<
   TContext extends BaseContext = BaseContext,
   TMethods extends BaseMethods = BaseMethods,
 > = (ctx: TContext) => TMethods
 
-export type RequestBaseFn<
+export type RequestFn<
   TMethods extends BaseMethods = BaseMethods
 > = (methods: TMethods)
   => (input: RequestInfo | URL, init?: RequestInit | undefined)
@@ -32,12 +32,12 @@ export type CreateFetchBaseFn = <
 >(params: {
   initializer: InitializerFn<TConfig, TContext>;
   createMethods: CreateMethodsFn<TContext, TMethods>;
-  requestFn?: RequestBaseFn<TMethods>;
+  requestFn?: RequestFn<TMethods>;
 })
   => (userConfig?: TConfig)
-  => ReturnType<RequestBaseFn>
+  => ReturnType<RequestFn>
 
-export const requestBese: RequestBaseFn = (_methods) =>
+export const requestBese: RequestFn = (_methods) =>
   (input, init) => new Promise((resolve, reject) => {
     fetch(input, init)
       .then(resolve)
@@ -47,7 +47,7 @@ export const requestBese: RequestBaseFn = (_methods) =>
 export const createBaseMethods: CreateMethodsFn = (_ctx) => ({})
 
 
-export const createFetchBase: CreateFetchBaseFn = ({
+export const createClient: CreateFetchBaseFn = ({
   initializer,
   createMethods,
   requestFn = requestBese
