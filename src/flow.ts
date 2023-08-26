@@ -12,7 +12,8 @@ type EventStatus = 'pending' | 'executing'
 type Queue = () => Promise<void>
 
 
-function initalize(config: FetchQueueConfig): FetchQueueContext {
+function initializer
+(config: FetchQueueConfig): FetchQueueContext {
   return {
     eventStatus: 'pending',
     queues: [],
@@ -28,7 +29,7 @@ type CreateFetchQueueFn = (config?: FetchQueueConfig)
   => Promise<Response>
 
 export const createFetchQueue: CreateFetchQueueFn = function (userConfig = {}) {
-  const ctx = initalize(userConfig)
+  const ctx = initializer(userConfig)
 
   const event = (async function* () {
     let queue: Queue | undefined = undefined
