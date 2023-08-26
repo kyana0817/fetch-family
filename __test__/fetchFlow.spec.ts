@@ -4,7 +4,7 @@ import {
   expect,
   vi
 } from 'vitest'
-import { fetchFlowClient } from '../src/flow'
+import { fetchFlowClient } from '../src'
 import type { Mock } from 'vitest'
 
 
