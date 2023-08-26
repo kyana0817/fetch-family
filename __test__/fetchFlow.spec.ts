@@ -26,15 +26,10 @@ describe('fetchFlow test', () => {
   })
   
   it('sequence', async () => {
-    const arr = [...new Array(12)].map((_, idx) => String(idx))
-    const promises: Promise<any>[]  = []
-  
+    const arr = [...new Array(12)].map((_, idx) => String(idx))  
     for (let i = 0, len = arr.length; i < len; ++i) {
-      promises.push(fetchFlow(arr[i])
-        .then(res => res.json())
-        .then(data => expect(data)
-          .toEqual({ input: arr[i] })))
+      expect(fetchFlow(arr[i])
+        .then(res => res.json())).resolves.toEqual({ input: arr[i] })
     }
-    await Promise.all(promises)
   })
 })
