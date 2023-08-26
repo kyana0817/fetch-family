@@ -35,6 +35,7 @@ export const createFetchQueue: CreateFetchQueueFn = function (userConfig = {}) {
     while ((queue = ctx.queues.pop()) !== undefined) {
       yield await queue()
     }
+    return
   })
 
   const execute = async () => {
