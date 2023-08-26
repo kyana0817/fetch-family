@@ -55,38 +55,36 @@ const createActions = (ctx: FetchFlowContext) => {
     }
     return undefined
   }
-  const event = (async function* () {
+  const event = async () => {
     let task: Queue | undefined = undefined
-    
-    while ((task = nextTask()) !== undefined) {
-      const [size, queue] = task
-      ctx.currentFetchSize -= size
-      const itemId = ++processId
-      ctx.currentProcesses.set(
-        itemId,
-        queue()
-          .finally(() => {
-            ctx.currentFetchSize += size
-            ctx.currentProcesses.delete(itemId)
-            ctx.eventStatus = ctx.currentProcesses.size > 0 ? 'executing': 'pending'
-          }))
+    while (ctx.eventStatus === 'executing') {
+      while ((task = nextTask()) !== undefined) {
+        const [size, queue] = task
+        ctx.currentFetchSize += size
+        const itemId = ++processId
+        ctx.currentProcesses.set(
+          itemId,
+          queue()
+            .finally(() => {
+              ctx.currentFetchSize -= size
+              ctx.currentProcesses.delete(itemId)
+              ctx.eventStatus = ctx.currentProcesses.size + ctx.queues.size > 0 ? 'executing': 'pending'
+            }))
+      }
+      await Promise.any([...ctx.currentProcesses].map(([_, promise]) => promise))
     }
-    
-    yield await Promise.any([...ctx.currentProcesses].map(([_, promise]) => promise))
-  })
-
-  const execute = async (isLoop = false) => {
-    if (ctx.eventStatus === 'executing' && !isLoop) return
-    ctx.eventStatus = 'executing'
-    for await(const _ of event()) {} // eslint-disable-line no-empty
-    execute(true)
+    return
   }
 
   return ({
     addQueue: (task: Queue) => {
       ctx.queues.set(++queueId, task)
     },
-    execute
+    execute: async () => {
+      if (ctx.eventStatus === 'executing') return
+      ctx.eventStatus = 'executing'
+      event()
+    }
   })
 }
 
