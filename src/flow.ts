@@ -89,13 +89,17 @@ const createActions = (ctx: FetchFlowContext) => {
 }
 
 const requestFn: RequestFn<FetchActions> = (actions) => 
-  (input, init) => {
+  (input, init={}) => {
     return new Promise((resolve, reject) => {
-      fetchSize(input, init)
+      const {
+        convertType='json', ...options 
+      } = init
+      fetchSize(input, options)
         .then(size => {
           actions.addQueue([
             size,
-            () => fetch(input, init)
+            () => fetch(input, options)
+              .then(res => res[convertType]())
               .then(resolve)
               .catch(reject)
           ])
