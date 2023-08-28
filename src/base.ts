@@ -19,11 +19,29 @@ export type CreateActionsFn<
   TActions extends BaseActions = BaseActions,
 > = (ctx: TContext) => TActions
 
+export type ResponseMap = {
+  arrayBuffer: ArrayBuffer;
+  blob: Blob;
+  formData: FormData;
+  json: any;
+  text: string;
+  clone: Response;
+}
+
+export type ConvertType = keyof ResponseMap;
+
+export type FamliyRequestInit<T extends ConvertType = 'json'> = RequestInit & {
+  convertType?: T
+}
+
 export type RequestFn<
   TActions extends BaseActions = BaseActions
 > = (actions: TActions)
-  => (input: RequestInfo | URL, init?: RequestInit | undefined)
-  => Promise<Response>
+  => <TConvert extends ConvertType>(
+    input: RequestInfo | URL,
+    init?: FamliyRequestInit<TConvert> | undefined
+  )
+  => Promise<ResponseMap[TConvert]>
 
 export type CreateFetchBaseFn = <
   TConfig extends BaseConfig = BaseConfig,
@@ -38,8 +56,12 @@ export type CreateFetchBaseFn = <
   => ReturnType<RequestFn>
 
 export const requestBese: RequestFn = (_actions) =>
-  (input, init) => new Promise((resolve, reject) => {
-    fetch(input, init)
+  (input, init={}) => new Promise((resolve, reject) => {
+    const {
+      convertType='json' , ...options 
+    } = init
+    fetch(input, options)
+      .then(res => res[convertType]())
       .then(resolve)
       .catch(reject)
   })
