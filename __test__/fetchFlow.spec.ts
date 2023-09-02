@@ -20,8 +20,8 @@ const fetchFlow = fetchFlowClient({ sizeLimit: 1024 })
 describe('fetchFlow test', () => {
   it('fetching', async () => {
 
-    const res = await fetchFlow('100')
-    expect(await res.json())
+    const data = await fetchFlow('100')
+    expect(data)
       .toEqual({ input: '100' })
   })
   
@@ -29,7 +29,7 @@ describe('fetchFlow test', () => {
     const arr = [...new Array(12)].map((_, idx) => String(idx))  
     for (let i = 0, len = arr.length; i < len; ++i) {
       expect(fetchFlow(arr[i])
-        .then(res => res.json())).resolves.toEqual({ input: arr[i] })
+        .then(data => data)).resolves.toEqual({ input: arr[i] })
     }
   })
 })

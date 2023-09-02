@@ -14,7 +14,7 @@ type FetchQueueContext = {
 
 type FetchActions = ReturnType<typeof createActions>
 
-type EventStatus = 'pending' | 'executing'
+type EventStatus = 'new-item' | 'pending' | 'executing'
 type Queue = () => Promise<void>
 
 const initializer = (config: FetchQueueConfig = {}): FetchQueueContext => ({
@@ -29,14 +29,18 @@ const initializer = (config: FetchQueueConfig = {}): FetchQueueContext => ({
 const createActions = (ctx: FetchQueueContext) => {
   const event = (async function* () {
     let queue: Queue | undefined = undefined
-    while ((queue = ctx.queues.pop()) !== undefined) {
+    while ((queue = ctx.queues.shift()) !== undefined) {
       yield await queue()
+        .finally(() => {console.log('hello')})
     }
     return
   })
 
   return ({
     addQueue: (task: Queue) => {
+      if (ctx.eventStatus !== 'executing') {
+        ctx.eventStatus = 'new-item'
+      }
       ctx.queues.push(task)        
     },
     execute: async () => {
@@ -49,9 +53,13 @@ const createActions = (ctx: FetchQueueContext) => {
 }
 
 const requestFn: RequestFn<FetchActions> = (actions) =>
-  (input, init) => new Promise((resolve, reject) => {
+  (input, init={}) => new Promise((resolve, reject) => {
+    const {
+      convertType='json', ...options 
+    } = init
     actions.addQueue(async () => {
-      fetch(input, init)
+      await fetch(input, options)
+        .then(res => res[convertType]())
         .then(resolve)
         .catch(reject)
     })

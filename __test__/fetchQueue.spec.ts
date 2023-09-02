@@ -20,16 +20,16 @@ global.fetch = vi.fn((input: RequestInfo | URL) => Promise.resolve({
 const fetchQueue = fetchQueueClient()
 describe('fetchQueue test', () => {
   it('fetching', async () => {
-    const res = await fetchQueue('100')
-    expect(await res.json())
+    const data = await fetchQueue('100', { convertType: 'json' })
+    expect(data)
       .toEqual({ input: '100' })
   })
   it('sequence', async () => {
     const arr = [...new Array(10)].map((_, idx) => String(idx))
 
     for (let i = 0, len = arr.length; i < len; ++i) {
-      const res = await fetchQueue(arr[i])
-      expect(await res.json())
+      const data = await fetchQueue(arr[i], { convertType: 'json' })
+      expect(data)
         .toEqual({ input: arr[i] })
     }
   })
@@ -37,12 +37,9 @@ describe('fetchQueue test', () => {
     const arr = [...new Array(10)].map((_, idx) => String(idx))
 
     for (let i = 0, len = arr.length; i < len; ++i) {
-      fetchQueue(arr[i])
-        .then(res => res.json())
-        .then(data => {
-          expect(data)
-            .toEqual({ input: arr[i] })
-        })
+      const data = await fetchQueue(arr[i], { convertType: 'json' })
+      expect(data)
+        .toEqual({ input: arr[i] })
     }
   })
 })
